@@ -3,3 +3,8 @@
 @tailwind components;
 
 @tailwind utilities;
+
+.container {
+    padding: 0 200px;
+    margin-top: 15px;
+}
