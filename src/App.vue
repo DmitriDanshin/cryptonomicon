@@ -81,7 +81,7 @@
               {{ t.name }} - USD
             </dt>
             <dd class="mt-1 text-3xl font-semibold text-gray-900">
-              {{ t.price }}
+              {{ formattedPrice(t.price) }}
             </dd>
           </div>
           <div class="w-full border-t border-gray-200"></div>
@@ -156,6 +156,9 @@
 
 <script>
 
+import {subscribeToTicker, unsubscribeFromTicker} from "./api";
+import {loadCryptocurrencies} from "@/api";
+
 
 export default {
   name: 'App',
@@ -173,7 +176,7 @@ export default {
   },
 
   created() {
-    this.getListOfCrypto();
+    this.getCryptocurrencies();
 
     const windowData = Object.fromEntries(new URL(window.location).searchParams.entries());
 
@@ -189,8 +192,16 @@ export default {
 
     if (tickersData) {
       this.tickers = JSON.parse(tickersData);
-      this.tickers.forEach(t => this.subscribeToUpdates(t))
+      this.tickers.forEach(ticker => {
+        subscribeToTicker(ticker.name, newPrice =>
+            this.updateTicker(ticker.name, newPrice)
+        );
+      });
     }
+
+
+    setInterval(this.updateTickers, 3000);
+
   },
 
   computed: {
@@ -249,57 +260,67 @@ export default {
 
   methods: {
 
+    formattedPrice(price) {
+      if (price === "-") {
+        return price;
+      }
+      return price > 1 ? price.toFixed(2) : price.toPrecision(2);
+    },
 
-    async getListOfCrypto() {
-      const f = await fetch('https://min-api.cryptocompare.com/data/all/coinlist?summary=true');
 
-      const data = await f.json();
-      const arrayOfValues = Object.values(data['Data']);
+    async getCryptocurrencies() {
+
+      const cryptocurrencies = await loadCryptocurrencies(),
+          arrayOfValues = Object.values(cryptocurrencies['Data']);
+
+
       arrayOfValues.forEach((a) => {
         this.fullNameOfExamples.push(a.FullName);
         this.examples.push(a.Symbol)
       });
 
     },
-    subscribeToUpdates(currentTicker) {
-      setInterval(async () => {
-        const f = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${
-            currentTicker.name}&tsyms=USD&api_key=7b28637819fb180bca89d663529a92f5974e701006c7f5383fdb91d5a593b4b1`);
-        const data = await f.json();
-        currentTicker.price = data.USD;
-
-        if (this.selectedTicker?.name === currentTicker.name) {
-          this.graph.push(data.USD)
-          console.log(this.graph)
-        }
-      }, 3000)
+    updateTicker(tickerName, price) {
+      this.tickers
+          .filter(t => t.name === tickerName)
+          .forEach(t => {
+            if (t === this.selectedTicker) {
+              this.graph.push(price);
+            }
+            t.price = price;
+          });
     },
+
     select(ticket) {
       this.selectedTicker = ticket;
 
     },
     add() {
-
       const currentTicker = {
         name: this.ticker,
-        price: '-',
-      }
+        price: "-"
+      };
 
-      if (this.isAlreadyAdded) {
+      if (this.isAlreadyAdded || this.ticker === '') {
         return
       }
 
-      this.tickers = [...this.tickers, currentTicker];
 
-      this.subscribeToUpdates(currentTicker)
-      this.ticker = '';
+      this.tickers = [...this.tickers, currentTicker];
+      this.ticker = "";
+      this.filter = "";
+      subscribeToTicker(currentTicker.name, newPrice =>
+          this.updateTicker(currentTicker.name, newPrice)
+      );
     },
+
 
     handleDelete(tickerToRemove) {
       this.tickers = this.tickers.filter(t => t !== tickerToRemove);
       if (this.selectedTicker === tickerToRemove) {
         this.selectedTicker = null;
       }
+      unsubscribeFromTicker(tickerToRemove.name);
     },
   },
 
@@ -319,7 +340,7 @@ export default {
       }
     },
 
-    pageStateOptions(value){
+    pageStateOptions(value) {
       const title = document.title;
       history.pushState(null, title, `${window.location.pathname}?filter=${value.filter}&page=${value.page}`)
     },
@@ -329,7 +350,7 @@ export default {
     },
 
     ticker() {
-      this.getListOfCrypto();
+      this.getCryptocurrencies();
       this.examples = this.examples.filter(x => x.toLowerCase().includes(this.ticker.toLowerCase()));
     }
 
