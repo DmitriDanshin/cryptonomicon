@@ -9,7 +9,7 @@ export const loadCryptocurrencies = async () => {
 }
 
 
-const tickersHandlers = new Map(); // {}
+const tickersHandlers = new Map();
 const socket = new WebSocket(
     `wss://streamer.cryptocompare.com/v2?api_key=${API_KEY}`
 );

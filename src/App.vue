@@ -53,7 +53,6 @@
           v-if="page > 1"
           @click="page = page - 1"
           class=" my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-
         Prev
       </button>
       <button
@@ -76,7 +75,7 @@
         <div v-for="t in paginatedTickers" :key="Math.random() + t.price" @click="select(t)"
              :class="{'border-2': selectedTicker === t}"
              class="bg-white overflow-hidden shadow rounded-lg border-purple-800  border-solid cursor-pointer">
-          <div class="px-4 py-5 sm:p-6 text-center ">
+          <div class="px-4 py-5 sm:p-6 text-center">
             <dt class="text-sm font-medium text-gray-500 truncate">
               {{ t.name }} - USD
             </dt>
@@ -112,10 +111,10 @@
       <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
         {{ selectedTicker.name }} - USD
       </h3>
-      <div class="flex items-end border-gray-600 border-b border-l h-64">
+      <div ref="graph" class="flex items-end border-gray-600 border-b border-l h-64">
         <div v-for="(bar, idx) in normalizedGraph" :key="idx"
-             :style="{ height: `${bar}%` }"
-             class="bg-purple-800 border w-10">
+             :style="{ height: `${bar}%`, width: `${widthOfBar}px`}"
+             class="bg-purple-800 border">
         </div>
 
       </div>
@@ -164,6 +163,7 @@ export default {
   name: 'App',
   data() {
     return {
+      widthOfBar: 38,
       ticker: '',
       tickers: [],
       selectedTicker: null,
@@ -172,6 +172,7 @@ export default {
       page: 1,
       filter: '',
       fullNameOfExamples: [],
+      maxGraphElements: 1,
     };
   },
 
@@ -206,8 +207,8 @@ export default {
 
   computed: {
 
-    pageStateOptions() {
 
+    pageStateOptions() {
       return {
         filter: this.filter,
         page: this.page,
@@ -252,13 +253,31 @@ export default {
         return this.graph.map(() => 50);
       }
 
+
       return this.graph.map(
           price => 5 + ((price - minValue) * 95) / (maxValue - minValue)
       );
     },
   },
 
+  mounted() {
+    window.addEventListener('resize', this.calculateGraphMaxElements);
+  },
+
+  beforeMount() {
+    window.removeEventListener('resize', this.calculateGraphMaxElements);
+  },
+
   methods: {
+
+    calculateGraphMaxElements() {
+
+      if (!this.$refs.graph) {
+        return;
+      }
+
+      this.maxGraphElements = this.$refs.graph.clientWidth / this.widthOfBar;
+    },
 
     formattedPrice(price) {
       if (price === "-") {
@@ -285,6 +304,9 @@ export default {
           .filter(t => t.name === tickerName)
           .forEach(t => {
             if (t === this.selectedTicker) {
+              while (this.graph.length > this.maxGraphElements) {
+                this.graph.shift();
+              }
               this.graph.push(price);
             }
             t.price = price;
@@ -329,9 +351,9 @@ export default {
     tickers() {
       localStorage.setItem('cryptonomicon-list', JSON.stringify(this.tickers));
     },
-
-    selectedTicker() {
+    async selectedTicker() {
       this.graph = [];
+      this.$nextTick().then(this.calculateGraphMaxElements);
     },
 
     paginatedTickers() {
