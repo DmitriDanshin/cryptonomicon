@@ -1,7 +1,7 @@
 <template>
   <div class="inline">
     Filter:
-    <input @input="filtered" type="text" />
+    <input type="text" @input="filtered" />
   </div>
 </template>
 

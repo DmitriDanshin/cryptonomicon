@@ -5,7 +5,6 @@
     </label>
     <div class="mt-1 relative rounded-md shadow-md">
       <input
-        @input="addTicker"
         :value="modelValue"
         type="text"
         name="wallet"
@@ -21,6 +20,7 @@
           rounded-md
         "
         placeholder="Например DOGE"
+        @input="addTicker"
       />
     </div>
   </div>

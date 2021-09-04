@@ -1,5 +1,5 @@
 <template>
-  <section class="relative" :style="{ marginBottom: '10px' }">
+  <section class="relative mb-3">
     <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
       {{ ticker.name }} - USD
     </h3>
