@@ -8,10 +8,7 @@
       <button v-if="hasNextPage" @click="page = page + 1" class="nav-button">
         Следующая
       </button>
-      <div class="inline">
-        Filter:
-        <input v-model="filter" type="text" />
-      </div>
+      <filter-field v-model="filter" />
     </div>
     {{ page }}
     <template v-if="tickers.length">
@@ -19,18 +16,11 @@
 
       <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
         <div
-          v-for="ticker in paginatedTickers"
-          :key="Math.random() + ticker.price"
+          v-for="(ticker, idx) in paginatedTickers"
+          :key="idx"
           @click="select(ticker)"
           :class="{ 'border-2': selectedTicker === ticker }"
-          class="
-            bg-white
-            overflow-hidden
-            shadow
-            rounded-lg
-            border-purple-800 border-solid
-            cursor-pointer
-          "
+          class="card"
         >
           <div
             class="px-4 py-5 sm:p-6 text-center"
@@ -69,10 +59,11 @@ import { loadCryptocurrencies } from "@/API";
 import AddTicker from "@/components/AddTicker";
 import TickerGraph from "@/components/TickerGraph";
 import VSvg from "@/components/v-svg";
+import FilterField from "@/components/FilterField";
 
 export default {
   name: "App",
-  components: { VSvg, TickerGraph, AddTicker },
+  components: { FilterField, VSvg, TickerGraph, AddTicker },
   data() {
     return {
       tickers: [],
@@ -222,7 +213,9 @@ export default {
       this.graph = [];
       this.$nextTick().then(this.calculateGraphMaxElements);
     },
+
     filter() {
+      console.log("ok");
       this.page = 1;
     },
 
@@ -273,5 +266,14 @@ export default {
   hover:text-gray-600 hover:bg-gray-200 hover:opacity-20
   transition-all
   focus:outline-none;
+}
+
+.card {
+  @apply bg-white
+  overflow-hidden
+  shadow
+  rounded-lg
+  border-purple-800 border-solid
+  cursor-pointer;
 }
 </style>
